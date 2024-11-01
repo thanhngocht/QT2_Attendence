@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lấy Vị Trí GPS và Địa Chỉ IP</title>
+</head>
+<body>
+    <h1>Lấy Vị Trí GPS và Địa Chỉ IP</h1>
+    <p id="ipAddress"></p>
+    <p id="location"></p>
+    <button onclick="getData()">Lấy IP và GPS</button>
+
+    <script>
+        // Hàm tự động gọi khi trang được tải
+        window.onload = async function() {
+            await getData();
+        };
+
+        function getData() {
+            // Lấy địa chỉ IP
+            fetch('https://api.ipify.org?format=json')
+                .then(response => response.json())
+                .then(ipData => {
+                    const ipAddress = ipData.ip;
+                    document.getElementById("ipAddress").innerText = "Địa chỉ IP: " + ipAddress;
+
+                    // Lấy vị trí GPS
+                    if (navigator.geolocation) {
+                        navigator.geolocation.getCurrentPosition(position => {
+                            const latitude = position.coords.latitude;
+                            const longitude = position.coords.longitude;
+                            document.getElementById("location").innerText = "Vĩ độ: " + latitude + ", Kinh độ: " + longitude;
+
+                            // Gọi hàm C# để lưu dữ liệu
+                            window.chrome.webview.postMessage(JSON.stringify({ ip: ipAddress, latitude: latitude, longitude: longitude }));
+                        }, showError);
+                    } else {
+                        document.getElementById("location").innerText = "Trình duyệt không hỗ trợ Geolocation.";
+                    }
+                });
+
+            function showError(error) {
+                document.getElementById("location").innerText = "Không thể lấy vị trí.";
+            }
+        }
+    </script>
+</body>
+</html>

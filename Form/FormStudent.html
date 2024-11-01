@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Form Điểm Danh</title>
+    <script>
+        // Hàm để lấy địa chỉ IP và GPS
+        function getLocation() {
+            // Lấy địa chỉ IP
+            fetch('https://api.ipify.org?format=json')
+                .then(response => response.json())
+                .then(ipData => {
+                    const ipAddress = ipData.ip;
+                    document.getElementById("ipAddress").innerText = ipAddress;
+
+                    // Lấy vị trí GPS
+                    if (navigator.geolocation) {
+                        navigator.geolocation.getCurrentPosition(position => {
+                            const latitude = position.coords.latitude;
+                            const longitude = position.coords.longitude;
+                            document.getElementById("gpsCoordinates").innerText = "" + latitude + "," + longitude;
+                        }, showError);
+                    } else {
+                        alert("Trình duyệt của bạn không hỗ trợ Geolocation.");
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching IP:', error);
+                    alert("Không thể lấy địa chỉ IP.");
+                });
+
+            function showError(error) {
+                switch(error.code) {
+                    case error.PERMISSION_DENIED:
+                        alert("Người dùng từ chối yêu cầu lấy vị trí.");
+                        break;
+                    case error.POSITION_UNAVAILABLE:
+                        alert("Vị trí không khả dụng.");
+                        break;
+                    case error.TIMEOUT:
+                        alert("Yêu cầu lấy vị trí đã hết thời gian.");
+                        break;
+                    case error.UNKNOWN_ERROR:
+                        alert("Đã xảy ra lỗi không xác định.");
+                        break;
+                }
+            }
+        }
+
+        function submitForm(event) {
+            event.preventDefault(); // Ngăn chặn hành động mặc định của form
+            const studentId = document.getElementById("studentId").value;
+            const attendanceId = document.getElementById("attendanceId").value;
+            const ipAddress = document.getElementById("ipAddress").innerText; // Lấy địa chỉ IP từ phần hiển thị
+            const gpsCoordinates = document.getElementById("gpsCoordinates").innerText; // Lấy tọa độ GPS từ phần hiển thị
+
+            // Gửi dữ liệu đến server
+            fetch('submit.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    StudentId: studentId,
+                    AttendanceId: attendanceId,
+                    LocalIPAddress: ipAddress,
+                    GPSCoordinates: gpsCoordinates
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert("Điểm danh thành công! Thông tin: " + JSON.stringify(data));
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+        }
+
+        // Tự động gọi hàm getLocation khi trang được tải
+        window.onload = function() {
+            getLocation();
+        };
+    </script>
+</head>
+<body>
+<h1>Form Điểm Danh</h1>
+<form onsubmit="submitForm(event)">
+    <label for="studentId">Mã số sinh viên:</label>
+    <input type="text" id="studentId" name="studentId" required><br><br>
+
+    <label for="attendanceId">Mã điểm danh:</label>
+    <input type="text" id="attendanceId" name="attendanceId" required><br><br>
+
+    <input type="submit" value="Gửi">
+</form>
+
+<!-- Hiển thị địa chỉ IP và GPS -->
+<p id="ipAddress"></p>
+<p id="gpsCoordinates"></p>
+</body>
+</html>
